@@ -1,0 +1,9 @@
+.venv
+.vscode
+notebooks
+data.txt
+dist
+build
+*.egg-info
+*.pyc
+*.db
