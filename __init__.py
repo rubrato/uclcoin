@@ -12,8 +12,6 @@ from pymongo import MongoClient
 uclcoindb = MongoClient('mongodb+srv://pi:pi@cluster0-zh9xm.azure.mongodb.net/test?retryWrites=true').uclcoin
 blockchain = BlockChain(mongodb=uclcoindb)
 
-print("runnings--------------------")
-
 app = Flask(__name__)
 
 @app.route('/balance/<address>', methods=['GET'])
