@@ -99,6 +99,7 @@ echo Detected requirements.txt. RUNNING CUSTOM DEPLOYMENT
 :: 2. Install packages
 echo Pip install requirements.
 D:\home\python364x64\python.exe -m pip install --upgrade -r requirements.txt
+D:\home\python364x64\python.exe D:\home\site\wwwroot\index.py
 IF !ERRORLEVEL! NEQ 0 goto error
 
 
