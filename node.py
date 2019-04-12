@@ -9,7 +9,7 @@ from uclcoin import Block, BlockChain, BlockchainException, KeyPair, Transaction
 
 from pymongo import MongoClient
 
-uclcoindb = MongoClient().uclcoin
+uclcoindb = MongoClient('mongodb+srv://pi:pi@cluster0-zh9xm.azure.mongodb.net/test?retryWrites=true').uclcoin
 blockchain = BlockChain(mongodb=uclcoindb)
 
 app = Flask(__name__)
