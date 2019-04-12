@@ -1,0 +1,6 @@
+requests==2.21.0
+coincurve==11.0.0
+Flask==1.0.2
+pymongo==3.7.2
+typing==3.6.6
+uclcoin==0.3.2
