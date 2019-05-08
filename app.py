@@ -9,6 +9,9 @@ from uclcoin import Block, BlockChain, BlockchainException, KeyPair, Transaction
 
 from pymongo import MongoClient
 
+from hashlib import sha256
+import json
+
 uclcoindb = MongoClient('mongodb+srv://pi:pi@cluster0-tdudc.azure.mongodb.net/test?retryWrites=true').uclcoin
 blockchain = BlockChain(mongodb=uclcoindb)
 
@@ -28,8 +31,8 @@ def get_chain():
     for block in blockchain.blocks:
         chain_data.append(block.__dict__)
     return json.dumps({"length": len(chain_data),
-                       "chain": chain_data,
-                       "peers": list(peers)})
+                       #"chain": chain_data,
+                       "peers": list(peers)}, sort_keys=True, indent=4)
 
 # endpoint to add new peers to the network.
 @app.route('/register_node', methods=['POST'])
@@ -108,6 +111,7 @@ def verify_and_add_block():
     if not added:
         return "The block was discarded by the node", 400
 
+    announce_new_block(block)
     return "Block added to the chain", 201
 
 def consensus():
@@ -118,7 +122,7 @@ def consensus():
     global blockchain
 
     longest_chain = None
-    current_len = len(blockchain.chain)
+    current_len = blockchain._count_blocks
 
     for node in peers:
         print('{}/chain'.format(node))
@@ -181,6 +185,7 @@ def add_block():
         block = request.get_json(force=True)
         block = Block.from_dict(block)
         blockchain.add_block(block)
+        announce_new_block(block)
         return jsonify({'message': f'Block #{block.index} added to the Blockchain'}), 201
     except (KeyError, TypeError, ValueError):
         return jsonify({'message': f'Invalid block format'}), 400

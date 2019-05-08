@@ -5,6 +5,9 @@ import coincurve
 from uclcoin.exceptions import BlockchainException, InvalidHash, InvalidTransactions
 from uclcoin.transaction import Transaction
 
+from hashlib import sha256
+import json
+
 
 class Block(object):
     def __init__(self, index, transactions, previous_hash, timestamp=None, nonce=0):
@@ -89,3 +92,10 @@ class Block(object):
 
     def __ne__(self, other):
         return not self == other
+
+    def compute_hash(self):
+        """
+        A function that return the hash of the block contents.
+        """
+        block_string = json.dumps(self.__dict__, sort_keys=True)
+        return sha256(block_string.encode()).hexdigest()

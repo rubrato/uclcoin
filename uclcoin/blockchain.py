@@ -6,6 +6,9 @@ from uclcoin.block import Block
 from uclcoin.exceptions import *  # pylint: disable=W0401
 from uclcoin.transaction import Transaction
 
+from hashlib import sha256
+import json
+
 try:
     from pymongo.database import Database
     pymongo_not_installed = False
@@ -262,6 +265,33 @@ class BlockChain(object):
 
     def _mpending_transactions(self):
         return self._pending_transactions.find({}, {'_id': 0})
+
+    def check_chain_validity(self, chain):
+        result = True
+        previous_hash = "0"
+
+        for block in chain:
+            block_hash = block.hash
+            # remove the hash field to recompute the hash again
+            # using `compute_hash` method.
+            delattr(block, "hash")
+
+            if not self.is_valid_proof(block, block.hash) or \
+                    previous_hash != block.previous_hash:
+                result = False
+                break
+
+            block.hash, previous_hash = block_hash, block_hash
+
+        return result
+
+    def is_valid_proof(self, block, block_hash):
+        """
+        Check if block_hash is valid hash of block and satisfies
+        the difficulty criteria.
+        """
+        return (block_hash.startswith('0' * MINIMUM_HASH_DIFFICULTY) and
+                block_hash == block.compute_hash())
 
     @property
     def blocks(self) -> Iterator[Block]:
