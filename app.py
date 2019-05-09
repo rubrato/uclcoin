@@ -6,6 +6,7 @@ import re
 
 from flask import Flask, jsonify, request
 from uclcoin import Block, BlockChain, BlockchainException, KeyPair, Transaction
+import requests
 
 from pymongo import MongoClient
 
@@ -33,6 +34,13 @@ def get_chain():
     return json.dumps({"length": len(chain_data),
                        #"chain": chain_data,
                        "peers": list(peers)}, sort_keys=True, indent=4)
+
+#TODO
+# Get Nodes
+@app.route('/get_nodes', methods=['GET'])
+def get_nodes():
+    response = requests.get('https://dnsblockchainucl.azurewebsites.net/chains')
+    return jsonify(response.text)
 
 # endpoint to add new peers to the network.
 @app.route('/register_node', methods=['POST'])
