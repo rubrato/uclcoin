@@ -20,7 +20,7 @@ peers = set()
 
 app = Flask(__name__)
 
-
+#TODO
 # endpoint to return the node's copy of the chain.
 # Our application will be using this endpoint to query
 # all the posts to display.
@@ -35,12 +35,32 @@ def get_chain():
                        #"chain": chain_data,
                        "peers": list(peers)}, sort_keys=True, indent=4)
 
-#TODO
+def extract_values(obj, key):
+    """Pull all values of specified key from nested JSON."""
+    arr = []
+
+    def extract(obj, arr, key):
+        """Recursively search for values of key in JSON tree."""
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if isinstance(v, (dict, list)):
+                    extract(v, arr, key)
+                elif k == key:
+                    arr.append(v)
+        elif isinstance(obj, list):
+            for item in obj:
+                extract(item, arr, key)
+        return arr
+
+    results = extract(obj, arr, key)
+    return results
+
 # Get Nodes
 @app.route('/get_nodes', methods=['GET'])
 def get_nodes():
     response = requests.get('https://dnsblockchainucl.azurewebsites.net/chains')
-    return jsonify(response.text)
+    peers = extract_values(response.json(), 'address')
+    return response.text
 
 # endpoint to add new peers to the network.
 @app.route('/register_node', methods=['POST'])
