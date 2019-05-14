@@ -13,6 +13,8 @@ from pymongo import MongoClient
 from hashlib import sha256
 import json
 
+from requests import async
+
 uclcoindb = MongoClient('mongodb+srv://pi:pi@cluster0-tdudc.azure.mongodb.net/test?retryWrites=true').uclcoin
 blockchain = BlockChain(mongodb=uclcoindb)
 
@@ -138,9 +140,22 @@ def verify_and_add_block():
 
     if not added:
         return "The block was discarded by the node", 400
+    
+    validates_peers = 0
+    async_list = []
+    for peer in peers:
+        action_item = async_get(u + '/validate', hooks = {'response' : valid_block})
+        async_list.append(action_item)
+    async.map(async_list)
 
-    announce_new_block(block)
-    return "Block added to the chain", 201
+    if(validates_peers > 2)
+        announce_new_block(block)
+        return "Block added to the chain", 201
+    return "Block invalid", 
+
+def valid_block(response)
+    if(response.status_code == 201)
+        validates_peers = validates_peers + 1
 
 def consensus():
     """
@@ -233,6 +248,16 @@ def get_minable_block(address):
     }
     return jsonify(response), 200
 
+@app.route('/validate',method=['POST'])
+def validate_block():
+    try:
+        block = request.get_json(force=True)
+        block = Block.from_dict(block)
+        return jsonify({'message': f'Block #{block.index} is a valid block!'}), 201
+    except (KeyError, TypeError, ValueError):
+        return jsonify({'message': f'Invalid block format'}), 400
+    except BlockchainException as bce:
+        return jsonify({'message': f'Invalid block: {bce}'}), 400
 
 @app.route('/transaction', methods=['POST'])
 def add_transaction():
