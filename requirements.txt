@@ -1,3 +1,4 @@
+grequests
 requests==2.21.0
 pymongo==3.7.2
 typing==3.6.6

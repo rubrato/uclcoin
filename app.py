@@ -1,28 +1,28 @@
 #!/usr/bin/env python
 # pylint: disable=C0103,C0111
-
-import os
-import re
-
-from flask import Flask, jsonify, request
-from uclcoin import Block, BlockChain, BlockchainException, KeyPair, Transaction
-import requests
-
+import gevent.monkey
+gevent.monkey.patch_all()
+from uclcoin import (Block, BlockChain, BlockchainException, KeyPair,
+                     Transaction)
 from pymongo import MongoClient
+from flask import Flask, jsonify, request
 
-from hashlib import sha256
+import requests
+import grequests
 import json
+import re
+from hashlib import sha256
 
-from requests import async
-
-uclcoindb = MongoClient('mongodb+srv://pi:pi@cluster0-tdudc.azure.mongodb.net/test?retryWrites=true').uclcoin
+uclcoindb = MongoClient(
+    'mongodb+srv://pi:pi@cluster0-tdudc.azure.mongodb.net/test?retryWrites=true').uclcoin
 blockchain = BlockChain(mongodb=uclcoindb)
 
 peers = set()
 
 app = Flask(__name__)
 
-#TODO
+
+# TODO
 # endpoint to return the node's copy of the chain.
 # Our application will be using this endpoint to query
 # all the posts to display.
@@ -34,8 +34,9 @@ def get_chain():
     for block in blockchain.blocks:
         chain_data.append(block.__dict__)
     return json.dumps({"length": len(chain_data),
-                       #"chain": chain_data,
+                       # "chain": chain_data,
                        "peers": list(peers)}, sort_keys=True, indent=4)
+
 
 def extract_values(obj, key):
     """Pull all values of specified key from nested JSON."""
@@ -57,12 +58,12 @@ def extract_values(obj, key):
     results = extract(obj, arr, key)
     return results
 
+
 # Get Nodes
 @app.route('/get_nodes', methods=['GET'])
 def get_nodes():
-    response = requests.get('https://dnsblockchainucl.azurewebsites.net/chains')
-    peers = extract_values(response.json(), 'address')
-    return response.text
+    return requests.get('https://dnsblockchainucl.azurewebsites.net/chains').json()
+
 
 # endpoint to add new peers to the network.
 @app.route('/register_node', methods=['POST'])
@@ -77,6 +78,7 @@ def register_new_peers():
     # Return the consensus blockchain to the newly registered node
     # so that he can sync
     return get_chain()
+
 
 @app.route('/register_with', methods=['POST'])
 def register_with_existing_node():
@@ -108,6 +110,7 @@ def register_with_existing_node():
         # if something goes wrong, pass it on to the API response
         return response.content, response.status_code
 
+
 def create_chain_from_dump(chain_dump):
     blockchain = BlockChain(mongodb=uclcoindb)
     for idx, block_data in enumerate(chain_dump):
@@ -124,6 +127,7 @@ def create_chain_from_dump(chain_dump):
             blockchain.chain.append(block)
     return blockchain
 
+
 # endpoint to add a block mined by someone else to
 # the node's chain. The block is first verified by the node
 # and then added to the chain.
@@ -131,31 +135,21 @@ def create_chain_from_dump(chain_dump):
 def verify_and_add_block():
     block_data = request.get_json()
     block = Block(block_data["index"],
-                    block_data["transactions"],
-                    block_data["previous_hash"],
-                    block_data["timestamp"])
+                  block_data["transactions"],
+                  block_data["previous_hash"],
+                  block_data["timestamp"])
 
     proof = block_data['hash']
     added = blockchain.add_block(block, proof)
 
     if not added:
         return "The block was discarded by the node", 400
-    
-    validates_peers = 0
-    async_list = []
-    for peer in peers:
-        action_item = async_get(u + '/validate', hooks = {'response' : valid_block})
-        async_list.append(action_item)
-    async.map(async_list)
 
-    if(validates_peers > 2)
-        announce_new_block(block)
-        return "Block added to the chain", 201
-    return "Block invalid", 
 
-def valid_block(response)
-    if(response.status_code == 201)
+def valid_block(response):
+    if response.status_code == 201:
         validates_peers = validates_peers + 1
+
 
 def consensus():
     """
@@ -181,7 +175,8 @@ def consensus():
         blockchain = longest_chain
         return True
 
-    return False    
+    return False
+
 
 def announce_new_block(block):
     """
@@ -225,15 +220,29 @@ def get_block(index):
 @app.route('/block', methods=['POST'])
 def add_block():
     try:
-        block = request.get_json(force=True)
-        block = Block.from_dict(block)
-        blockchain.add_block(block)
-        announce_new_block(block)
-        return jsonify({'message': f'Block #{block.index} added to the Blockchain'}), 201
+        block_json = request.get_json(force=True)
+        block = Block.from_dict(block_json)
+
+        rs = (grequests.post(f'{node['address']}/validate', data=request.data) for node in get_nodes())
+        responses = grequests.map(rs)
+        validated_chains = 1
+        for response in responses:
+            if response.status_code == 201:
+                validated_chains += 1
+                # 2 porque esta já conta como uma
+                if validated_chains == 3:
+                    break
+
+        if validated_chains == 3:
+            blockchain.add_block(block)
+            announce_new_block(block)
+            return jsonify({'message': f'Block #{block.index} added to the Blockchain'}), 201
+        else:
+            return jsonify({'message': f'Block rejected: {block}'}), 400
     except (KeyError, TypeError, ValueError):
         return jsonify({'message': f'Invalid block format'}), 400
     except BlockchainException as bce:
-        return jsonify({'message': f'Block rejected: {bce}'}), 400
+        return jsonify({'message': f'Block rejected: {block}'}), 400
 
 
 @app.route('/block/minable/<address>', methods=['GET'])
@@ -248,7 +257,8 @@ def get_minable_block(address):
     }
     return jsonify(response), 200
 
-@app.route('/validate',method=['POST'])
+
+@app.route('/validate', methods=['POST'])
 def validate_block():
     try:
         block = request.get_json(force=True)
@@ -258,6 +268,7 @@ def validate_block():
         return jsonify({'message': f'Invalid block format'}), 400
     except BlockchainException as bce:
         return jsonify({'message': f'Invalid block: {bce}'}), 400
+
 
 @app.route('/transaction', methods=['POST'])
 def add_transaction():
