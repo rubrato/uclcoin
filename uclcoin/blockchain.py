@@ -63,7 +63,7 @@ class BlockChain(object):
         if self._count_blocks() == 0:
             self.add_block(genesis_block())
 
-    def add_block(self, block, proof):
+    def add_block(self, block):
         self.validate_block(block)
         for t in block.transactions[:-1]:
             self.remove_pending_transaction(t.tx_hash)
