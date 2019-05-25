@@ -11,10 +11,10 @@ import requests
 import grequests
 import json
 import re
+import numpy as np
 from hashlib import sha256
 
-uclcoindb = MongoClient(
-    'mongodb+srv://pi:pi@cluster0-tdudc.azure.mongodb.net/test?retryWrites=true').uclcoin
+uclcoindb = MongoClient('mongodb+srv://pi:pi@cluster0-tdudc.azure.mongodb.net/test?retryWrites=true').uclcoin
 blockchain = BlockChain(mongodb=uclcoindb)
 
 peers = set()
@@ -33,9 +33,17 @@ def get_chain():
     chain_data = []
     for block in blockchain.blocks:
         chain_data.append(block.__dict__)
-    return json.dumps({"length": len(chain_data),
-                       # "chain": chain_data,
+
+    for chain in chain_data:
+        for i,transaction in enumerate(chain['transactions']):
+            tempTrans = chain['transactions'][i]
+            jsonTrans = json.dumps(tempTrans.__str__())
+            chain['transactions'][i] = jsonTrans.replace("\"","*").replace("'","\"")
+
+    jsonText = json.dumps({"length": len(chain_data),
+                       "chain": chain_data,
                        "peers": list(peers)}, sort_keys=True, indent=4)
+    return jsonText.replace("\"*","").replace("*\"","").replace("\\\"","\"")
 
 
 def extract_values(obj, key):
@@ -62,7 +70,7 @@ def extract_values(obj, key):
 # Get Nodes
 @app.route('/get_nodes', methods=['GET'])
 def get_nodes():
-    return requests.get('https://dnsblockchainucl.azurewebsites.net/chains').json()
+    return requests.get('https://dnsblockchainucl.azurewebsites.net/chains').text
 
 
 # endpoint to add new peers to the network.
@@ -87,7 +95,7 @@ def register_with_existing_node():
     register current node with the node specified in the
     request, and sync the blockchain as well as peer data.
     """
-    node_address = request.get_json()["node_address"]
+    node_address = json(request.get_json())["node_address"]
     if not node_address:
         return "Invalid data", 400
 
@@ -144,12 +152,6 @@ def verify_and_add_block():
 
     if not added:
         return "The block was discarded by the node", 400
-
-
-def valid_block(response):
-    if response.status_code == 201:
-        validates_peers = validates_peers + 1
-
 
 def consensus():
     """
@@ -222,8 +224,7 @@ def add_block():
     try:
         block_json = request.get_json(force=True)
         block = Block.from_dict(block_json)
-
-        rs = (grequests.post(f'{node["address"]}/validate', data=request.data) for node in get_nodes())
+        rs = (grequests.post(f'{node["address"]}/validate', data=request.data) for node in json.loads(get_nodes()))
         responses = grequests.map(rs)
         validated_chains = 1
         for response in responses:
