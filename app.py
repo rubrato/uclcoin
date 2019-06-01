@@ -163,17 +163,17 @@ def consensus():
 
     longest_chain = None
     current_len = blockchain._blocks.count()
-    #print(current_len)
-    rs = (grequests.get(f'{node["address"]}/chain', data=request.data) for node in json.loads(get_nodes()))
+    print(current_len)
+    rs = (grequests.get(f'{node["address"]}/chain') for node in json.loads(get_nodes()))
     responses = grequests.map(rs)
     
     for response in responses:
-        #print(response.status_code)
+        print(response.status_code)
         if response.status_code == 200:
             length = response.json()['length']
-            #print(length)
+            print(length)
             chain = response.json()['chain']
-            #print(chain)
+            print(chain)
             if length > current_len and blockchain.check_chain_validity(chain):
                 current_len = length
                 longest_chain = chain
