@@ -229,14 +229,20 @@ def add_block():
         rs = (grequests.post(f'{node["address"]}/validate', data=request.data) for node in json.loads(get_nodes()))
         responses = grequests.map(rs)
         validated_chains = 1
-        for response in responses:
-            if response.status_code == 201:
-                validated_chains += 1
-                # 2 porque esta já conta como uma
-                if validated_chains == 3:
-                    break
+        try:
+            for response in responses:
+                try:
+                    if response.status_code == 201:
+                        validated_chains += 1
+                    # 2 porque esta já conta como uma
+                    if validated_chains == 2:
+                        break     
+                except:
+                    print('Servidor invalido')   
+        except:
+            print('Servidor invalido')            
 
-        if validated_chains == 3:
+        if validated_chains == 2:
             blockchain.add_block(block)
             announce_new_block(block)
             return jsonify({'message': f'Block #{block.index} added to the Blockchain'}), 201
