@@ -14,7 +14,7 @@ import re
 import numpy as np
 from hashlib import sha256
 
-server = MongoClient('mongodb+srv://root:root@cluster0-axobn.mongodb.net/test?retryWrites=true&w=majority')
+server = MongoClient('mongodb+srv://root:root@cluster0-11nmn.azure.mongodb.net/test?retryWrites=true&w=majority')
 uclcoindb = server.uclcoin
 blockchain = BlockChain(mongodb=uclcoindb)
 
