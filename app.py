@@ -14,7 +14,8 @@ import re
 import numpy as np
 from hashlib import sha256
 
-uclcoindb = MongoClient('mongodb+srv://pi:pi@cluster0-tdudc.azure.mongodb.net/test?retryWrites=true').uclcoin
+server = MongoClient('mongodb+srv://pi:pi@cluster0-tdudc.azure.mongodb.net/test?retryWrites=true')
+uclcoindb = server.uclcoin
 blockchain = BlockChain(mongodb=uclcoindb)
 
 peers = set()
@@ -163,17 +164,13 @@ def consensus():
 
     longest_chain = None
     current_len = blockchain._blocks.count()
-    print(current_len)
     rs = (grequests.get(f'{node["address"]}/chain') for node in json.loads(get_nodes()))
     responses = grequests.map(rs)
     
     for response in responses:
-        print(response.status_code)
         if response.status_code == 200:
             length = response.json()['length']
-            print(length)
             chain = response.json()['chain']
-            print(chain)
             if length > current_len and blockchain.check_chain_validity(chain):
                 current_len = length
                 longest_chain = chain
@@ -190,8 +187,9 @@ def announce_new_block(block):
     Other blocks can simply verify the proof of work and add it to their
     respective chains.
     """
-    for node["address"] in json.loads(get_nodes()):
-        url = "{}/add_block".format(node)
+    for node in json.loads(get_nodes()):
+        print(node["address"])
+        url = "{}/add_block".format(node["address"])
         requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
 
 
