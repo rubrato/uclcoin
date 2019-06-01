@@ -70,18 +70,19 @@ def extract_values(obj, key):
 # Get Nodes
 @app.route('/get_nodes', methods=['GET'])
 def get_nodes():
+    peers = extract_values(json.loads(requests.get('https://dnsblockchainucl.azurewebsites.net/chains').text), 'address')
     return requests.get('https://dnsblockchainucl.azurewebsites.net/chains').text
 
 
 # endpoint to add new peers to the network.
 @app.route('/register_node', methods=['POST'])
 def register_new_peers():
-    node_address = request.get_json()["node_address"]
-    if not node_address:
+    address = request.get_json()["address"]
+    if not address:
         return "Invalid data", 400
 
     # Add the node to the peer list
-    peers.add(node_address)
+    peers.add(address)
 
     # Return the consensus blockchain to the newly registered node
     # so that he can sync
@@ -95,15 +96,15 @@ def register_with_existing_node():
     register current node with the node specified in the
     request, and sync the blockchain as well as peer data.
     """
-    node_address = json(request.get_json())["node_address"]
-    if not node_address:
+    address = json(request.get_json())["address"]
+    if not address:
         return "Invalid data", 400
 
-    data = {"node_address": request.host_url}
+    data = {"address": request.host_url}
     headers = {'Content-Type': "application/json"}
 
     # Make a request to register with remote node and obtain information
-    response = requests.post(node_address + "/register_node",
+    response = requests.post(address + "/register_node",
                              data=json.dumps(data), headers=headers)
 
     if response.status_code == 200:
@@ -187,7 +188,7 @@ def announce_new_block(block):
     respective chains.
     """
     for peer in peers:
-        url = "{}add_block".format(peer)
+        url = "{}/add_block".format(peer)
         requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
 
 
