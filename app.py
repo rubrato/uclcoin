@@ -168,9 +168,12 @@ def consensus():
     responses = grequests.map(rs)
     
     for response in responses:
-        if response.status_code == 201:
+        print(response)
+        if response.status_code == 200:
             length = response.json()['length']
+            print(length)
             chain = response.json()['chain']
+            print(chain)
             if length > current_len and blockchain.check_chain_validity(chain):
                 current_len = length
                 longest_chain = chain
