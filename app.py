@@ -233,7 +233,7 @@ def add_block():
             if response.status_code == 201:
                 validated_chains += 1
                 # 2 porque esta já conta como uma
-                if validated_chains == 3:
+                if validated_chains == 2:
                     break
 
         if validated_chains == 3:
