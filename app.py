@@ -236,7 +236,7 @@ def add_block():
                 if validated_chains == 2:
                     break
 
-        if validated_chains == 3:
+        if validated_chains == 2:
             blockchain.add_block(block)
             announce_new_block(block)
             return jsonify({'message': f'Block #{block.index} added to the Blockchain'}), 201
