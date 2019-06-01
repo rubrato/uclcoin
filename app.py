@@ -164,15 +164,16 @@ def consensus():
     longest_chain = None
     current_len = blockchain._count_blocks
 
-    for node in peers:
-        print('{}/chain'.format(node))
-        response = requests.get('{}chain'.format(node))
-        print("Content", response.content)
-        length = response.json()['length']
-        chain = response.json()['chain']
-        if length > current_len and blockchain.check_chain_validity(chain):
-            current_len = length
-            longest_chain = chain
+    rs = (grequests.get(f'{node["address"]}/chain', data=request.data) for node in json.loads(get_nodes()))
+    responses = grequests.map(rs)
+    
+    for response in responses:
+        if response.status_code == 201:
+            length = response.json()['length']
+            chain = response.json()['chain']
+            if length > current_len and blockchain.check_chain_validity(chain):
+                current_len = length
+                longest_chain = chain
 
     if longest_chain:
         blockchain = longest_chain
@@ -180,15 +181,14 @@ def consensus():
 
     return False
 
-
 def announce_new_block(block):
     """
     A function to announce to the network once a block has been mined.
     Other blocks can simply verify the proof of work and add it to their
     respective chains.
     """
-    for peer in peers:
-        url = "{}/add_block".format(peer)
+    for node["address"] in json.loads(get_nodes()):
+        url = "{}/add_block".format(node)
         requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
 
 
