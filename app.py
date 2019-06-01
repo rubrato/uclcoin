@@ -230,11 +230,14 @@ def add_block():
         responses = grequests.map(rs)
         validated_chains = 1
         for response in responses:
-            if response.status_code == 201:
-                validated_chains += 1
+            try:
+                if response.status_code == 201:
+                    validated_chains += 1
                 # 2 porque esta já conta como uma
                 if validated_chains == 2:
-                    break
+                    break     
+            except:
+                print('Servidor invalido')   
 
         if validated_chains == 2:
             blockchain.add_block(block)
