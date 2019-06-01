@@ -14,7 +14,7 @@ import re
 import numpy as np
 from hashlib import sha256
 
-server = MongoClient('mongodb+srv://root:root@cluster0-11nmn.azure.mongodb.net/test?retryWrites=true&w=majority')
+server = MongoClient('mongodb+srv://root:root@cluster0-axobn.mongodb.net/test?retryWrites=true&w=majority')
 uclcoindb = server.uclcoin
 blockchain = BlockChain(mongodb=uclcoindb)
 
@@ -341,6 +341,11 @@ def get_ranking():
     ranking = sorted(ranking.items(), key=lambda x: x[1], reverse=True)
     return jsonify(ranking), 200
 
+@app.route('/keypair', methods=['GET'])
+def generate_key():
+    wallet = KeyPair()
+    rs =  wallet.public_key + "; " + wallet.private_key
+    return jsonify(rs), 200
 
 if __name__ == '__main__':
     app.run()
