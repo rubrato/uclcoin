@@ -72,6 +72,9 @@ class BlockChain(object):
         else:
             self._blocks.append(block)
 
+    def clear(self):
+        self._blocks.drop()
+
     def calculate_hash_difficulty(self, index=None):
         if index is None:
             index = self._count_blocks()
