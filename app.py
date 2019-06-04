@@ -20,7 +20,7 @@ blockchain = BlockChain(mongodb=uclcoindb)
 
 peers = set()
 app = Flask(__name__)
-domain = 'http://127.0.0.1:5000'
+domain = 'https://piv.azurewebsites.net'
 consensus()
 # endpoint to return the node's copy of the chain.
 # Our application will be using this endpoint to query
