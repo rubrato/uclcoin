@@ -21,7 +21,7 @@ blockchain = BlockChain(mongodb=uclcoindb)
 peers = set()
 app = Flask(__name__)
 domain = 'https://piv.azurewebsites.net'
-consensus()
+
 # endpoint to return the node's copy of the chain.
 # Our application will be using this endpoint to query
 # all the posts to display.
@@ -225,12 +225,17 @@ def add_block():
         rs = (grequests.post(f'{node["address"]}/validate', data=request.data) for node in json.loads(get_nodes()))
         responses = grequests.map(rs)      
         validated_chains = 1
+        unvalidated_chains = 0
         for response in responses:
             print(response.status_code)
             if response.status_code == 201:
                 validated_chains += 1
-                # 2 porque esta já conta como uma
-            if validated_chains == 2:
+            elif response.status_code == 400:
+                    unvalidated_chains += 1
+                    if validated_chains == 3:
+                        consensus()
+                        break
+            if validated_chains == 3:
                 break      
 
         if validated_chains == 2:
@@ -342,3 +347,5 @@ def generate_key():
 
 if __name__ == '__main__':
     app.run()
+
+consensus()
