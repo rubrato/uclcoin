@@ -261,7 +261,7 @@ def get_ranking():
 @app.route('/keypair', methods=['GET'])
 def generate_key():
     wallet = KeyPair()
-    rs =  [{'private_key':f'{wallet.public_key}'},{'public_key':f'{wallet.private_key}'}]
+    rs =  [{'private_key':f'{wallet.private_key}'},{'public_key':f'{wallet.public_key}'}]
     return jsonify(rs), 200
 
 if __name__ == '__main__':
