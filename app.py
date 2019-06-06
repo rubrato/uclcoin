@@ -18,7 +18,6 @@ server = MongoClient('mongodb+srv://pi:pi@cluster0-tdudc.azure.mongodb.net/test?
 uclcoindb = server.uclcoin
 blockchain = BlockChain(mongodb=uclcoindb)
 domain = 'https://blockchainpiv.azurewebsites.net' #Insert your domain
-consecutives_invalids_blocks = 0
 
 app = Flask(__name__)
 
@@ -162,11 +161,6 @@ def add_block():
     except (KeyError, TypeError, ValueError):
         return jsonify({'message': f'Invalid block format'}), 400
     except BlockchainException as bce:
-        consecutives_invalids_blocks += 1
-        if consecutives_invalids_blocks == 5:
-            consensus()
-            consecutives_invalids_blocks = 0
-            return jsonify({'message': 'Blockchain was Outdated'}), 400
         return jsonify({'message': f'Block rejected: {block}'}), 400
 
 
