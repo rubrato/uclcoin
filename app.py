@@ -258,6 +258,11 @@ def get_ranking():
     ranking = sorted(ranking.items(), key=lambda x: x[1], reverse=True)
     return jsonify(ranking), 200
 
+@app.route('/keypair', methods=['GET'])
+def generate_key():
+    wallet = KeyPair()
+    rs =  [{'private_key':f'{wallet.private_key}'},{'public_key':f'{wallet.public_key}'}]
+    return jsonify(rs), 200
 
 if __name__ == '__main__':
     app.run()
