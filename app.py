@@ -139,7 +139,7 @@ def add_block():
         validated_chains = 1
         unvalidated_chains = 0
         total_valids = 2
-        total_unvalids = 1
+        total_unvalids = 5
         for response in responses:
             if response != None:
                 if response.status_code == 201:
@@ -163,7 +163,7 @@ def add_block():
         return jsonify({'message': f'Invalid block format'}), 400
     except BlockchainException as bce:
         consecutives_invalids_blocks += 1
-        if consecutives_invalids_blocks == 3:
+        if consecutives_invalids_blocks == 5:
             consensus()
             consecutives_invalids_blocks = 0
             return jsonify({'message': 'Blockchain was Outdated'}), 400
