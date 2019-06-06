@@ -224,7 +224,7 @@ def add_block():
         block = Block.from_dict(block_json)
         rs = (grequests.post(f'{node["address"]}/validate', data=request.data) for node in json.loads(get_nodes()))
         responses = grequests.map(rs)      
-        validated_chains = 1
+        validated_chains = 1 #já começa com 1 pq este servidor já validou
         unvalidated_chains = 0
         for response in responses:
             print(response.status_code)
@@ -232,10 +232,10 @@ def add_block():
                 validated_chains += 1
             elif response.status_code == 400:
                     unvalidated_chains += 1
-                    if validated_chains == 3:
+                    if unvalidated_chains == 1:
                         consensus()
                         break
-            if validated_chains == 3:
+            if validated_chains == 2:
                 break      
 
         if validated_chains == 2:
