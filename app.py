@@ -139,7 +139,7 @@ def add_block():
         validated_chains = 1
         unvalidated_chains = 0
         total_valids = 2
-        total_unvalids = 1
+        total_unvalids = 3
         for response in responses:
             if response != None:
                 if response.status_code == 201:
