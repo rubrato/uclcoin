@@ -133,13 +133,13 @@ def add_block():
     try:
         block_json = request.get_json(force=True)
         block = Block.from_dict(block_json)
-        blockchain.validate_block(block)
         rs = (grequests.post(f'{node["address"]}/validate', data=request.data) for node in json.loads(get_nodes()))
         responses = grequests.map(rs)
         validated_chains = 1
         unvalidated_chains = 0
         total_valids = 2
         total_unvalids = 4
+        print(responses)
         for response in responses:
             if response != None:
                 if response.status_code == 201:
@@ -183,7 +183,6 @@ def validate_block():
     try:
         block = request.get_json(force=True)
         block = Block.from_dict(block)
-        BlockChain.validate_block(block)
         return jsonify({'message': f'Block #{block.index} is a valid block!'}), 201
     except (KeyError, TypeError, ValueError):
         return jsonify({'message': f'Invalid block format'}), 400
