@@ -131,6 +131,8 @@ def get_block(index):
 @app.route('/block', methods=['POST'])
 def add_block():
     try:
+        if len(blockchain.pending_transactions) == 0:
+          return '[]', 201
         block_json = request.get_json(force=True)
         block = Block.from_dict(block_json)
         rs = (grequests.post(f'{node["address"]}/validate', data=request.data) for node in json.loads(get_nodes()))
@@ -165,6 +167,8 @@ def add_block():
 
 @app.route('/block/minable/<address>', methods=['GET'])
 def get_minable_block(address):
+    if len(blockchain.pending_transactions) == 0:
+      return '[]', 201
     if not re.match(r'[\da-f]{66}$', address):
         return jsonify({'message': 'Invalid address'}), 400
 
