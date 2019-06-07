@@ -139,17 +139,15 @@ def add_block():
         unvalidated_chains = 0
         total_valids = 2
         total_unvalids = 4
-        print(responses)
         for response in responses:
-            if response != None:
-                if response.status_code == 201:
-                    validated_chains += 1
-                elif response.status_code == 400:
-                    unvalidated_chains += 1
-                    if unvalidated_chains == total_unvalids:
-                        break
-                if validated_chains == total_valids:
-                    break      
+            if response.status_code == 201:
+                validated_chains += 1
+            if validated_chains == total_valids:
+                break 
+            elif response.status_code == 400:
+                unvalidated_chains += 1
+                if unvalidated_chains == total_unvalids:
+                    break
         if validated_chains == total_valids:
             blockchain.add_block(block)
             announce_new_block(block_json)
@@ -257,6 +255,18 @@ def generate_key():
     wallet = KeyPair()
     rs =  [{'private_key':f'{wallet.private_key}'},{'public_key':f'{wallet.public_key}'}]
     return jsonify(rs), 200
+
+@app.route('/reset_blockchain', methods=['GET'])
+def get_reset_blockchain():
+    BlockChain.clear()
+    return jsonify({'message':'Blockchain reseted successfuly'}), 200
+
+@app.route('/reset_all_blockchains', methods=['GET'])
+def get_reset_all_blockchains():
+    for node in json.loads(get_nodes()):
+        address = node['address']
+        url = "{}/reset_blockchain".format(address)
+        requests.get(url)
 
 if __name__ == '__main__':
     app.run()

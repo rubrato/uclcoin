@@ -14,4 +14,5 @@ while block.current_hash[:difficulty].count('0') < difficulty:
 
 data = json.dumps(block, default=lambda x: x.__dict__)
 
-requests.post('http://127.0.0.1:5000/block',data,json=True)
+r = requests.post('http://127.0.0.1:5000/block',data,json=True)
+print(r.text)
