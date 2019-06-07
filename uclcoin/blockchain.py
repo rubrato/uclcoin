@@ -45,7 +45,7 @@ def check_genesis_block(block):
 class BlockChain(object):
     COINS_PER_BLOCK = 1
     MAX_TRANSACTIONS_PER_BLOCK = 200
-    MINIMUM_HASH_DIFFICULTY = 3
+    MINIMUM_HASH_DIFFICULTY = 1
 
     def __init__(self, mongodb: Database = None):
         if pymongo_not_installed and mongodb is not None:
