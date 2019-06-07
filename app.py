@@ -78,7 +78,8 @@ def consensus():
     for response in responses:
         if response != None and response.status_code == 200:
             blocks = response.json()
-            if len(blocks) > current_len:    
+            if len(blocks) > current_len:
+                current_len = len(blocks)    
                 blockchain.clear()    
                 for block in blocks:
                     temp_block = Block.from_dict(block)
@@ -138,7 +139,7 @@ def add_block():
         validated_chains = 1
         unvalidated_chains = 0
         total_valids = 2
-        total_unvalids = 5
+        total_unvalids = 4
         for response in responses:
             if response != None:
                 if response.status_code == 201:
