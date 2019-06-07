@@ -133,8 +133,6 @@ def add_block():
     try:
         block_json = request.get_json(force=True)
         block = Block.from_dict(block_json)
-        #if len(blockchain.pending_transactions) == 0:
-          #return jsonify({'message': f'Block rejected: {block}'}), 400
         rs = (grequests.post(f'{node["address"]}/validate', data=request.data) for node in json.loads(get_nodes()))
         responses = grequests.map(rs)
         validated_chains = 1
@@ -167,8 +165,6 @@ def add_block():
 
 @app.route('/block/minable/<address>', methods=['GET'])
 def get_minable_block(address):
-    #if len(blockchain.pending_transactions) == 0:
-      #return '[]', 201
     if not re.match(r'[\da-f]{66}$', address):
         return jsonify({'message': 'Invalid address'}), 400
 
@@ -195,7 +191,6 @@ def validate_block():
 def add_transaction():
     try:
         transaction = request.get_json(force=True)
-        transaction_json = transaction
         if not re.match(r'[\da-f]{66}$', transaction['destination']):
             return jsonify({'message': 'Invalid address'}), 400
         if transaction['amount'] < 0.00001:
@@ -204,32 +199,11 @@ def add_transaction():
             return jsonify({'message': 'Invalid fee. Minimum allowed fee is 0.00001 or zero'}), 400
         transaction = Transaction.from_dict(transaction)
         blockchain.add_transaction(transaction)
-        announce_new_transaction(transaction_json)
         return jsonify({'message': f'Pending transaction {transaction.tx_hash} added to the Blockchain'}), 201
     except (KeyError, TypeError, ValueError):
         return jsonify({'message': f'Invalid transacton format'}), 400
     except BlockchainException as bce:
         return jsonify({'message': f'Transaction rejected: {bce}'}), 400
-
-def announce_new_transaction(transaction):
-    """
-    A function to announce to the network once a block has been mined.
-    Other blocks can simply verify the proof of work and add it to their
-    respective chains.
-    """ 
-    for node in json.loads(get_nodes()):
-        address = node['address']
-        if address != domain:
-            url = "{}/add_foreign_transaction".format(address)
-            requests.post(url, json=transaction)
-
-@app.route('/add_foreign_transaction', methods=['POST'])
-def verify_and_add_block():
-    transaction_data = request.get_json()
-    transaction = Transaction.from_dict(transaction_data)
-    blockchain.add_transaction(transaction)
-
-    return "The transaction was added", 200
 
 @app.route('/transaction/<private_key>/<public_key>/<value>', methods=['POST'])
 def add_transaction2(private_key, public_key, value):
@@ -237,17 +211,9 @@ def add_transaction2(private_key, public_key, value):
         wallet = KeyPair(private_key)
         transaction = wallet.create_transaction(public_key, float(value))
         blockchain.add_transaction(transaction)
-        transaction_json = convert_transaction_json(transaction)
-        announce_new_transaction(transaction_json)
         return jsonify({'message': f'Pending transaction {transaction.tx_hash} added to the Blockchain'}), 201
     except BlockchainException as bce:
         return jsonify({'message': f'Transaction rejected: {bce}'}), 400
-
-def convert_transaction_json(transaction):
-    jsonTrans = json.dumps(transaction.__str__())
-    json_replace = jsonTrans.replace("\"","*").replace("'","\"")
-    jsonText = json.dumps(json_replace, sort_keys=True, indent=4)
-    return jsonText.replace("\"*","").replace("*\"","").replace("\\\"","\"")
 
 @app.route('/avgtimes', methods=['GET'])
 def get_averages():
