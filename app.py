@@ -132,7 +132,7 @@ def get_block(index):
 def add_block():
     try:
         if len(blockchain.pending_transactions) == 0:
-          return '[]', 201
+          return jsonify({'message': f'Block rejected: {block}'}), 400
         block_json = request.get_json(force=True)
         block = Block.from_dict(block_json)
         rs = (grequests.post(f'{node["address"]}/validate', data=request.data) for node in json.loads(get_nodes()))
