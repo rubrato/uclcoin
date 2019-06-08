@@ -190,26 +190,19 @@ def validate_block():
 @app.route('/transaction', methods=['POST'])
 def add_transaction():
     try:
-        transaction = request.get_json(force=True)
-        if not re.match(r'[\da-f]{66}$', transaction['destination']):
+        transaction_json = request.get_json(force=True)
+        private_key = transaction_json['privateKey']
+        public_key = transaction_json['publicKey']
+        value = float(transaction_json['value'])
+        if not re.match(r'[\da-f]{66}$', public_key):
             return jsonify({'message': 'Invalid address'}), 400
-        if transaction['amount'] < 0.00001:
+        if value < 0.00001:
             return jsonify({'message': 'Invalid amount. Minimum allowed amount is 0.00001'}), 400
-        if 0 > transaction['fee'] < 0.00001:
-            return jsonify({'message': 'Invalid fee. Minimum allowed fee is 0.00001 or zero'}), 400
-        transaction = Transaction.from_dict(transaction)
-        blockchain.add_transaction(transaction)
-        return jsonify({'message': f'Pending transaction {transaction.tx_hash} added to the Blockchain'}), 201
-    except (KeyError, TypeError, ValueError):
-        return jsonify({'message': f'Invalid transacton format'}), 400
-    except BlockchainException as bce:
-        return jsonify({'message': f'Transaction rejected: {bce}'}), 400
-
-@app.route('/transaction/<private_key>/<public_key>/<value>', methods=['POST'])
-def add_transaction2(private_key, public_key, value):
-    try:
         wallet = KeyPair(private_key)
-        transaction = wallet.create_transaction(public_key, float(value))
+        balance = blockchain.get_balance_pending(wallet.public_key)
+        if balance < value:
+            return jsonify({'message': 'Insuficient amount of coins'}), 400
+        transaction = wallet.create_transaction(public_key, value)
         blockchain.add_transaction(transaction)
         return jsonify({'message': f'Pending transaction {transaction.tx_hash} added to the Blockchain'}), 201
     except BlockchainException as bce:
