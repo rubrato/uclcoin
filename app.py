@@ -161,7 +161,7 @@ def add_block():
     except (KeyError, TypeError, ValueError):
         return jsonify({'message': f'Invalid block format'}), 400
     except BlockchainException as bce:
-        return jsonify({'message': f'Block rejected: {block}'}), 400
+        return jsonify({'message': f'Block rejected(error): {block}'}), 400
 
 
 @app.route('/block/minable/<address>', methods=['GET'])
