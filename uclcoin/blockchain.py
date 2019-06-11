@@ -252,7 +252,7 @@ class BlockChain(object):
                     payers[transaction.source] = transaction.amount + transaction.fee
                 reward_amount += transaction.fee
         except InvalidTransactions as bce:
-            self.remove_pending_transaction(t.tx_hash)
+            self.remove_pending_transaction(transaction.tx_hash)
             raise InvalidTransactions('Transactions not valid.  Removing transaction')
         for key in payers:
             balance = self.get_balance(key)
