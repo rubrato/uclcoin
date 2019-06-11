@@ -240,20 +240,18 @@ class BlockChain(object):
     def _check_transactions_and_block_reward(self, block):
         reward_amount = self.get_reward(block.index)
         payers = dict()
-        try:
-            for transaction in block.transactions[:-1]:
-                if self.find_duplicate_transactions(transaction.tx_hash):
-                    raise InvalidTransactions('Transactions not valid.  Duplicate transaction detected')
-                if not transaction.verify():
-                    raise InvalidTransactions('Transactions not valid.  Invalid Transaction signature')
-                if transaction.source in payers:
-                    payers[transaction.source] += transaction.amount + transaction.fee
-                else:
-                    payers[transaction.source] = transaction.amount + transaction.fee
-                reward_amount += transaction.fee
-        except InvalidTransactions as bce:
-            self.remove_pending_transaction(transaction.tx_hash)
-            raise InvalidTransactions('Transactions not valid.  Removing transaction')
+        for transaction in block.transactions[:-1]:
+            if self.find_duplicate_transactions(transaction.tx_hash):
+                self.remove_pending_transaction(transaction.tx_hash)
+                raise InvalidTransactions('Transactions not valid.  Duplicate transaction detected')
+            if not transaction.verify():
+                self.remove_pending_transaction(transaction.tx_hash)
+                raise InvalidTransactions('Transactions not valid.  Invalid Transaction signature')
+            if transaction.source in payers:
+                payers[transaction.source] += transaction.amount + transaction.fee
+            else:
+                payers[transaction.source] = transaction.amount + transaction.fee
+            reward_amount += transaction.fee
         for key in payers:
             balance = self.get_balance(key)
             if payers[key] > balance:
