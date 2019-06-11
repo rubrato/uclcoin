@@ -106,7 +106,7 @@ def get_balance(address):
     if not re.match(r'[\da-f]{66}$', address):
         return jsonify({'message': 'Invalid address'}), 400
 
-    balance = blockchain.get_balance(address)
+    balance = blockchain.get_balance_pending(address)
     return jsonify({'balance': balance}), 200
 
 
@@ -181,6 +181,7 @@ def validate_block():
     try:
         block = request.get_json(force=True)
         block = Block.from_dict(block)
+        blockchain.validate_block(block)
         return jsonify({'message': f'Block #{block.index} is a valid block!'}), 201
     except (KeyError, TypeError, ValueError):
         return jsonify({'message': f'Invalid block format'}), 400
@@ -196,15 +197,47 @@ def add_transaction():
         value = float(transaction_json['value'])
         if not re.match(r'[\da-f]{66}$', public_key):
             return jsonify({'message': 'Invalid address'}), 400
-        if value < 0.00001:
+        if value < 1:
             return jsonify({'message': 'Invalid amount. Minimum allowed amount is 0.00001'}), 400
         wallet = KeyPair(private_key)
         balance = blockchain.get_balance_pending(wallet.public_key)
         if balance < value:
             return jsonify({'message': 'Insuficient amount of coins'}), 400
         transaction = wallet.create_transaction(public_key, value)
+        send_transaction = json.dumps({
+            'source': transaction.source, 
+            'destination': transaction.destination, 
+            'amount': transaction.amount, 
+            'fee': transaction.fee, 
+            'timestamp': transaction.timestamp, 
+            'tx_hash': transaction.tx_hash, 
+            'signature': transaction.signature
+        })
         blockchain.add_transaction(transaction)
+        announce_new_transaction(send_transaction)
         return jsonify({'message': f'Pending transaction {transaction.tx_hash} added to the Blockchain'}), 201
+    except BlockchainException as bce:
+        return jsonify({'message': f'Transaction rejected: {bce}'}), 400
+
+def announce_new_transaction(transaction):
+    """
+    A function to announce to the network that a new transaction has been added to pending.
+    """ 
+    for node in json.loads(get_nodes()):
+        address = node['address']
+        if address != domain:
+            url = "{}/add_transaction".format(address)
+            requests.post(url, json=transaction)
+
+@app.route('/add_transaction', methods=['POST'])
+def add_new_transaction():
+    try:
+        transaction_json = request.get_json(force=True)
+        transactionObj = json.loads(transaction_json)
+        transaction = Transaction.from_dict(transactionObj)
+        blockchain.add_transaction(transaction)
+        
+        return "The transaction was added", 200
     except BlockchainException as bce:
         return jsonify({'message': f'Transaction rejected: {bce}'}), 400
 
