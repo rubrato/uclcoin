@@ -106,8 +106,9 @@ def get_balance(address):
     if not re.match(r'[\da-f]{66}$', address):
         return jsonify({'message': 'Invalid address'}), 400
 
-    balance = blockchain.get_balance_pending(address)
-    return jsonify({'balance': balance}), 200
+    balance = blockchain.get_balance(address)
+    pending = blockchain.get_balance_pending(address)
+    return jsonify({'balance': balance, 'pending': pending}), 200
 
 
 @app.route('/pending_transactions', methods=['GET'])
