@@ -210,6 +210,8 @@ class BlockChain(object):
         balance_pending = self.get_balance_pending(transaction.source)
         if transaction.amount + transaction.fee > balance_pending:
             raise InvalidTransactions(f'Transaction not valid.  Insufficient funds: {transaction.tx_hash}')
+        if transaction.source == transaction.destination:
+            raise InvalidTransactions(f'Transaction not valid.  Destination same as source: {transaction.tx_hash}')
 
     def add_transaction(self, transaction):
         self.validate_transaction(transaction)
@@ -238,16 +240,20 @@ class BlockChain(object):
     def _check_transactions_and_block_reward(self, block):
         reward_amount = self.get_reward(block.index)
         payers = dict()
-        for transaction in block.transactions[:-1]:
-            if self.find_duplicate_transactions(transaction.tx_hash):
-                raise InvalidTransactions('Transactions not valid.  Duplicate transaction detected')
-            if not transaction.verify():
-                raise InvalidTransactions('Transactions not valid.  Invalid Transaction signature')
-            if transaction.source in payers:
-                payers[transaction.source] += transaction.amount + transaction.fee
-            else:
-                payers[transaction.source] = transaction.amount + transaction.fee
-            reward_amount += transaction.fee
+        try:
+            for transaction in block.transactions[:-1]:
+                if self.find_duplicate_transactions(transaction.tx_hash):
+                    raise InvalidTransactions('Transactions not valid.  Duplicate transaction detected')
+                if not transaction.verify():
+                    raise InvalidTransactions('Transactions not valid.  Invalid Transaction signature')
+                if transaction.source in payers:
+                    payers[transaction.source] += transaction.amount + transaction.fee
+                else:
+                    payers[transaction.source] = transaction.amount + transaction.fee
+                reward_amount += transaction.fee
+            except InvalidTransactions as bce:
+                self.remove_pending_transaction(t.tx_hash)
+                raise InvalidTransactions('Transactions not valid.  Removing transaction')
         for key in payers:
             balance = self.get_balance(key)
             if payers[key] > balance:
