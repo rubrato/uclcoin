@@ -107,8 +107,9 @@ def get_balance(address):
         return jsonify({'message': 'Invalid address'}), 400
 
     balance = blockchain.get_balance(address)
-    pending = blockchain.get_balance_pending(address)
-    return jsonify({'balance': balance, 'pending': pending}), 200
+    discount = blockchain.get_balance_discount(address)
+    future = blockchain.get_balance_future(address)
+    return jsonify({'balance': balance, 'discount':discount, 'future':future}), 200
 
 
 @app.route('/pending_transactions', methods=['GET'])
@@ -161,7 +162,7 @@ def add_block():
     except (KeyError, TypeError, ValueError):
         return jsonify({'message': f'Invalid block format'}), 400
     except BlockchainException as bce:
-        return jsonify({'message': f'Block rejected(error): {block}'}), 400
+        return jsonify({'message': f'Block rejected: {block}'}), 400
 
 
 @app.route('/block/minable/<address>', methods=['GET'])
@@ -199,9 +200,11 @@ def add_transaction():
         if not re.match(r'[\da-f]{66}$', public_key):
             return jsonify({'message': 'Invalid address'}), 400
         if value < 1:
-            return jsonify({'message': 'Invalid amount. Minimum allowed amount is 0.00001'}), 400
+            return jsonify({'message': 'Invalid amount. Minimum allowed amount is 1'}), 400
         wallet = KeyPair(private_key)
-        balance = blockchain.get_balance_pending(wallet.public_key)
+        if(public_key == wallet.public_key):
+            return jsonify({'message': 'Destination same as source'}), 400
+        balance = blockchain.get_balance_discount(wallet.public_key)
         if balance < value:
             return jsonify({'message': 'Insuficient amount of coins'}), 400
         transaction = wallet.create_transaction(public_key, value)
@@ -282,7 +285,7 @@ def generate_key():
 
 @app.route('/reset_blockchain', methods=['GET'])
 def get_reset_blockchain():
-    BlockChain.clear()
+    blockchain.clear()
     return jsonify({'message':'Blockchain reseted successfuly'}), 200
 
 @app.route('/reset_all_blockchains', methods=['GET'])
