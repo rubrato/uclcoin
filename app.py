@@ -204,8 +204,9 @@ def add_transaction():
         wallet = KeyPair(private_key)
         if(public_key == wallet.public_key):
             return jsonify({'message': 'Destination same as source'}), 400
-        balance = blockchain.get_balance_discount(wallet.public_key)
-        if balance < value:
+        balance = blockchain.get_balance(wallet.public_key)
+        balance_discount = blockchain.get_balance_discount(wallet.public_key)
+        if balance + balance_discount < value:
             return jsonify({'message': 'Insuficient amount of coins'}), 400
         transaction = wallet.create_transaction(public_key, value)
         send_transaction = json.dumps({
