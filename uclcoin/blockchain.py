@@ -74,6 +74,7 @@ class BlockChain(object):
 
     def clear(self):
         self._blocks.drop()
+        self._pending_transactions.drop()
 
     def calculate_hash_difficulty(self, index=None):
         if index is None:
@@ -100,6 +101,20 @@ class BlockChain(object):
                 balance -= transaction.amount + transaction.fee
             if transaction.destination == address:
                 balance += transaction.amount
+        return balance
+
+    def get_balance_future(self, address):
+        balance = 0
+        for transaction in self.pending_transactions:
+            if transaction.destination == address:
+                balance += transaction.amount
+        return balance
+
+    def get_balance_discount(self, address):
+        balance = 0
+        for transaction in self.pending_transactions:
+            if transaction.source == address:
+                balance -= transaction.amount + transaction.fee
         return balance
 
     def get_balance(self, address):
@@ -210,8 +225,6 @@ class BlockChain(object):
         balance_pending = self.get_balance_pending(transaction.source)
         if transaction.amount + transaction.fee > balance_pending:
             raise InvalidTransactions(f'Transaction not valid.  Insufficient funds: {transaction.tx_hash}')
-        if transaction.source == transaction.destination:
-            raise InvalidTransactions(f'Transaction not valid.  Destination same as source: {transaction.tx_hash}')
 
     def add_transaction(self, transaction):
         self.validate_transaction(transaction)
@@ -242,10 +255,8 @@ class BlockChain(object):
         payers = dict()
         for transaction in block.transactions[:-1]:
             if self.find_duplicate_transactions(transaction.tx_hash):
-                self.remove_pending_transaction(transaction.tx_hash)
                 raise InvalidTransactions('Transactions not valid.  Duplicate transaction detected')
             if not transaction.verify():
-                self.remove_pending_transaction(transaction.tx_hash)
                 raise InvalidTransactions('Transactions not valid.  Invalid Transaction signature')
             if transaction.source in payers:
                 payers[transaction.source] += transaction.amount + transaction.fee
