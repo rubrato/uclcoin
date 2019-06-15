@@ -283,7 +283,7 @@ def generate_key():
     wallet = KeyPair()
     rs =  [{'private_key':f'{wallet.private_key}'},{'public_key':f'{wallet.public_key}'}]
     return jsonify(rs), 200
-
+""" desativada a rota de reset
 @app.route('/reset_blockchain', methods=['GET'])
 def get_reset_blockchain():
     blockchain.clear()
@@ -295,6 +295,6 @@ def get_reset_all_blockchains():
         address = node['address']
         url = "{}/reset_blockchain".format(address)
         requests.get(url)
-
+"""
 if __name__ == '__main__':
     app.run()
